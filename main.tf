@@ -37,7 +37,13 @@ module "http_elb" {
   description = "Security group with HTTP ports open for everybody (IPv4 CIDR), egress ports are all world open"
   vpc_id      = data.aws_vpc.default.id
 
-  ingress_cidr_blocks = ["0.0.0.0/0"]
+  computed_ingress_with_source_security_group_id = [
+    {
+      rule                     = "http-80-tcp"
+      source_security_group_id = "${module.http_sg.this_security_group_id}"
+    }
+  ]
+  number_of_computed_ingress_with_source_security_group_id = 1
 
 }
 
