@@ -59,7 +59,7 @@ module "example_asg" {
 
   image_id        = "ami-00bdd96ebae87b550"
   instance_type   = "t2.micro"
-  security_groups = [module.http_sg.this_security_group_id]
+  security_groups = [data.aws_security_group.default.id]
   load_balancers  = [module.elb.this_elb_id]
 
   # ebs_block_device = [
@@ -110,7 +110,7 @@ module "elb" {
   name = "elb-example"
 
   subnets         = data.aws_subnet_ids.all.ids
-  security_groups = [data.aws_security_group.default.id]
+  security_groups = [module.http_sg.this_security_group_id]
   internal        = false
 
   listener = [
