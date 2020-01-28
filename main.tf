@@ -38,7 +38,7 @@ module "http_elb" {
   vpc_id      = data.aws_vpc.default.id
 
   ingress_cidr_blocks = ["0.0.0.0/0"]
-  
+
 }
 
 # data "aws_ami" "amazon_linux" {
@@ -70,7 +70,7 @@ module "example_asg" {
 
   image_id        = "ami-00bdd96ebae87b550"
   instance_type   = "t2.micro"
-  security_groups = [data.aws_security_group.default.id]
+  security_groups = [module.http_elb.this_security_group_id]
   load_balancers  = [module.elb.this_elb_id]
 
   # ebs_block_device = [
