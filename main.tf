@@ -30,6 +30,16 @@ module "http_sg" {
   ingress_cidr_blocks = ["0.0.0.0/0"]
 }
 
+module "http_elb" {
+  source = "terraform-aws-modules/security-group/aws//modules/http-80"
+
+  name        = "http-elb"
+  description = "Security group with HTTP ports open for everybody (IPv4 CIDR), egress ports are all world open"
+  vpc_id      = data.aws_vpc.default.id
+
+  computed_ingress_with_source_security_group_id = [module.http_sg.this_security_group_id]
+}
+
 # data "aws_ami" "amazon_linux" {
 #   most_recent = true
 #   owners      = ["525414821691"] # Marek Bytnar
@@ -84,7 +94,7 @@ module "example_asg" {
   health_check_type         = "EC2"
   min_size                  = 1
   max_size                  = 4
-  desired_capacity          = 0
+  desired_capacity          = 1
   wait_for_capacity_timeout = 0
 
   tags = [
