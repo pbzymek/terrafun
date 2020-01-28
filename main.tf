@@ -20,6 +20,16 @@ data "aws_security_group" "default" {
   name   = "default"
 }
 
+module "http_sg" {
+  source = "terraform-aws-modules/security-group/aws//modules/http-80"
+
+  name        = "http-sg"
+  description = "Security group with HTTP ports open for everybody (IPv4 CIDR), egress ports are all world open"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress_cidr_blocks = ["0.0.0.0/0"]
+}
+
 # data "aws_ami" "amazon_linux" {
 #   most_recent = true
 #   owners      = ["525414821691"] # Marek Bytnar
@@ -49,7 +59,7 @@ module "example_asg" {
 
   image_id        = "ami-00bdd96ebae87b550"
   instance_type   = "t2.micro"
-  security_groups = [data.aws_security_group.default.id]
+  security_groups = [module.http_sg.this_security_group_id]
   load_balancers  = [module.elb.this_elb_id]
 
   # ebs_block_device = [
