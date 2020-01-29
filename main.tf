@@ -1,7 +1,6 @@
 provider "aws" {
-  region     = "eu-central-1"
-  profile    = "krzywda"
-  # project     = "echo-terraform-engineering-day"
+  region     = "eu-central-1" # Frankfurt
+  profile    = "<put your aws credentials profile>"
 }
 
 ##############################################################
@@ -20,73 +19,47 @@ data "aws_security_group" "default" {
   name   = "default"
 }
 
-module "http_sg" {
+module "elb_http_80_sg" {
   source = "terraform-aws-modules/security-group/aws//modules/http-80"
 
-  name        = "http-sg"
+  name        = "elb-http-80-sg"
   description = "Security group with HTTP ports open for everybody (IPv4 CIDR), egress ports are all world open"
   vpc_id      = data.aws_vpc.default.id
 
   ingress_cidr_blocks = ["0.0.0.0/0"]
 }
 
-module "http_elb" {
+module "webserver_http_80_sg" {
   source = "terraform-aws-modules/security-group/aws//modules/http-80"
 
-  name        = "http-elb"
+  name        = "webserver-http-80-sg"
   description = "Security group with HTTP ports open for everybody (IPv4 CIDR), egress ports are all world open"
   vpc_id      = data.aws_vpc.default.id
 
   computed_ingress_with_source_security_group_id = [
     {
       rule                     = "http-80-tcp"
-      source_security_group_id = "${module.http_sg.this_security_group_id}"
+      source_security_group_id = "${module.elb_http_80_sg.this_security_group_id}"
     }
   ]
   number_of_computed_ingress_with_source_security_group_id = 1
-
 }
-
-# data "aws_ami" "amazon_linux" {
-#   most_recent = true
-#   owners      = ["525414821691"] # Marek Bytnar
-#
-#   filter {
-#     name = "id"
-#
-#     values = [
-#       "ami-0b76a50a2627e2c16",
-#     ]
-#   }
-# }
 
 ######
 # Launch configuration and autoscaling group
 ######
-module "example_asg" {
+module "echo_terrafun_asg" {
   source = "terraform-aws-modules/autoscaling/aws"
-
-  name = "example-with-elb"
+  name = "Echo Terrafun with ELB"
 
   # Launch configuration
   #
-  # launch_configuration = "my-existing-launch-configuration" # Use the existing launch configuration
-  # create_lc = false # disables creation of launch configuration
-  lc_name = "example-lc"
+  lc_name = "echo-terrafun-lc"
 
   image_id        = "ami-00bdd96ebae87b550"
   instance_type   = "t2.micro"
-  security_groups = [module.http_elb.this_security_group_id]
+  security_groups = [module.webserver_http_80_sg.this_security_group_id]
   load_balancers  = [module.elb.this_elb_id]
-
-  # ebs_block_device = [
-  #   {
-  #     device_name           = "/dev/xvdz"
-  #     volume_type           = "gp2"
-  #     volume_size           = "50"
-  #     delete_on_termination = true
-  #   },
-  # ]
 
   root_block_device = [
     {
@@ -124,10 +97,10 @@ module "example_asg" {
 module "elb" {
   source = "terraform-aws-modules/elb/aws"
 
-  name = "elb-example"
+  name = "echo-terrafun-elb"
 
   subnets         = data.aws_subnet_ids.all.ids
-  security_groups = [module.http_sg.this_security_group_id]
+  security_groups = [module.elb_http_80_sg.this_security_group_id]
   internal        = false
 
   listener = [
